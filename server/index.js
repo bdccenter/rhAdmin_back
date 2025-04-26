@@ -1,10 +1,15 @@
-const express = require('express');
-const mysql = require('mysql2/promise');
-const cors = require('cors');
-const dotenv = require('dotenv');
-const path = require('path');
-const crypto = require('crypto');
+import express from 'express';
+import mysql from 'mysql2/promise';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import path from 'path';
+import crypto from 'crypto';
 
+// Configuración para ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Configuración de variables de entorno - simplificada para producción
 dotenv.config();
