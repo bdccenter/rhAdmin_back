@@ -1,0 +1,31 @@
+{
+  "name": "rh_admin-back",
+  "version": "1.0.0",
+  "description": "Backend para el sistema de administración de Recursos Humanos",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "test",
+    "dev": "node server/index.js",
+    "start": "node server/index.js"
+  },
+  "keywords": [
+    "rh",
+    "admin",
+    "backend",
+    "api",
+    "recursos humanos"
+  ],
+  "dependencies": {
+    "cors": "^2.8.5",
+    "crypto": "^1.0.1",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "mysql2": "^3.14.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  },
+  "author": "Moises",
+  "license": "ISC"
+}
