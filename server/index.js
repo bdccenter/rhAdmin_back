@@ -53,7 +53,7 @@ app.post('/api/auth/login', async (req, res) => {
     // Consultar el usuario por email
     const [users] = await connection.query(`
       SELECT id, name, last_name, email, password, agency, is_superuser 
-      FROM Users 
+      FROM users 
       WHERE email = ?
     `, [email]);
     // Liberar la conexión después de usarla
@@ -116,8 +116,8 @@ app.get('/api/employees', async (req, res) => {
         u.email as user_email,
         e.last_modified,
         e.modified_by
-      FROM Employees e
-      JOIN Users u ON e.id_user = u.id
+      FROM employees e
+      JOIN users u ON e.id_user = u.id
     `);
 
     connection.release();
