@@ -157,8 +157,8 @@ app.get('/api/employees/:id', async (req, res) => {
         u.email as user_email,
         e.last_modified,
         e.modified_by
-      FROM Employees e
-      JOIN Users u ON e.id_user = u.id
+      FROM employees e
+      JOIN users u ON e.id_user = u.id
       WHERE e.id = ?
     `, [id]);
     connection.release();
@@ -189,7 +189,8 @@ app.post('/api/users', async (req, res) => {
     const connection = await pool.getConnection();
 
     // Verificar si el email ya existe
-    const [existingUsers] = await connection.query('SELECT id FROM Users WHERE email = ?', [email]);
+    const [existingUsers] = await connection.query('SELECT id FROM users WHERE email = ?', [email]);
+
 
     if (existingUsers.length > 0) {
       connection.release();
@@ -201,7 +202,7 @@ app.post('/api/users', async (req, res) => {
 
     // Insertar el nuevo usuario
     const [result] = await connection.query(`
-      INSERT INTO Users (name, last_name, email, password, agency, is_superuser) 
+      INSERT INTO users (name, last_name, email, password, agency, is_superuser)
       VALUES (?, ?, ?, ?, ?, ?)
     `, [name, last_name, email, hashedPassword, agency, is_superuser || 0]);
 
@@ -225,7 +226,7 @@ app.get('/api/users', async (req, res) => {
 
     const [users] = await connection.query(`
       SELECT id, name, last_name, email, agency, is_superuser
-      FROM Users 
+      FROM users 
       ORDER BY id ASC
     `);
 
@@ -247,7 +248,7 @@ app.get('/api/users/:id', async (req, res) => {
 
     const [users] = await connection.query(`
       SELECT id, name, last_name, email, agency, is_superuser
-      FROM Users
+      FROM users
       WHERE id = ?
     `, [id]);
 
@@ -279,7 +280,7 @@ app.put('/api/users/:id', async (req, res) => {
     const connection = await pool.getConnection();
 
     // Verificar si el usuario existe
-    const [existingUsers] = await connection.query('SELECT id FROM Users WHERE id = ?', [id]);
+    const [existingUsers] = await connection.query('SELECT id FROM users WHERE id = ?', [id]);
 
     if (existingUsers.length === 0) {
       connection.release();
@@ -293,14 +294,14 @@ app.put('/api/users/:id', async (req, res) => {
     if (password && password.trim() !== '') {
       const hashedPassword = crypto.createHash('md5').update(password).digest('hex');
       query = `
-        UPDATE Users 
+        UPDATE users 
         SET name = ?, last_name = ?, email = ?, password = ?, agency = ?, is_superuser = ?
         WHERE id = ?
       `;
       params = [name, last_name, email, hashedPassword, agency, is_superuser || 0, id];
     } else {
       query = `
-        UPDATE Users 
+        UPDATE users 
         SET name = ?, last_name = ?, email = ?, agency = ?, is_superuser = ?
         WHERE id = ?
       `;
@@ -328,7 +329,7 @@ app.delete('/api/users/:id', async (req, res) => {
     const connection = await pool.getConnection();
 
     // Verificar si el usuario existe
-    const [existingUsers] = await connection.query('SELECT id FROM Users WHERE id = ?', [id]);
+    const [existingUsers] = await connection.query('SELECT id FROM users WHERE id = ?', [id]);
 
     if (existingUsers.length === 0) {
       connection.release();
@@ -346,7 +347,7 @@ app.delete('/api/users/:id', async (req, res) => {
     }
 
     // Eliminar el usuario
-    await connection.query('DELETE FROM Users WHERE id = ?', [id]);
+    await connection.query('DELETE FROM users WHERE id = ?', [id]);
 
     connection.release();
 
@@ -372,7 +373,7 @@ app.post('/api/employees', async (req, res) => {
     const connection = await pool.getConnection();
 
     // Verificar si el id_user existe
-    const [existingUsers] = await connection.query('SELECT id FROM Users WHERE id = ?', [id_user]);
+    const [existingUsers] = await connection.query('SELECT id FROM users WHERE id = ?', [id_user]);
 
     if (existingUsers.length === 0) {
       connection.release();
@@ -419,7 +420,7 @@ app.put('/api/employees/:id', async (req, res) => {
     }
 
     // Verificar si el id_user existe
-    const [existingUsers] = await connection.query('SELECT id FROM Users WHERE id = ?', [id_user]);
+    const [existingUsers] = await connection.query('SELECT id FROM users WHERE id = ?', [id_user]);
 
     if (existingUsers.length === 0) {
       connection.release();
