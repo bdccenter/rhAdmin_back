@@ -1,21 +1,16 @@
-import express from 'express';
-import mysql from 'mysql2/promise';
-import cors from 'cors';
-import dotenv from 'dotenv';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-import path from 'path';
-import crypto from 'crypto';
+const express = require('express');
+const mysql = require('mysql2/promise');
+const cors = require('cors');
+const dotenv = require('dotenv');
+const path = require('path');
+const crypto = require('crypto');
 
-// Configuración para ESM
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
-// Configuración de variables de entorno
-dotenv.config({ path: path.resolve(process.cwd(), '../..', '.env') });
+// Configuración de variables de entorno - simplificada para producción
+dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const port = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors());
@@ -23,18 +18,24 @@ app.use(express.json());
 
 // Configuración de la conexión a la base de datos
 const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'rh_admin'
+  host: process.env.HOST_DB || 'localhost',
+  port: process.env.PORT_DB || 3306,
+  user: process.env.USER || 'root',
+  password: process.env.PASSWORD || 'root',
+  database: process.env.DATABASE || 'test',
+  connectionLimit: process.env.CONNECTION_LIMIT || 10,
 };
 
 // Crear pool de conexiones MySQL
 const pool = mysql.createPool(dbConfig);
 
+// Ruta para verificar que el servidor está funcionando
+app.get('/api/test', (req, res) => {
+  res.json({ message: 'Servidor funcionando correctamente' });
+});
+
 // Ruta para autenticar usuarios
 app.post('/api/auth/login', async (req, res) => {
-  // Ruta para autenticar usuarios
   try {
     const { email, password } = req.body;
     // Validar que se proporcionen email y contraseña
@@ -91,12 +92,10 @@ app.post('/api/auth/login', async (req, res) => {
 
 // Ruta para obtener todos los empleados
 app.get('/api/employees', async (req, res) => {
-  // Ruta para obtener todos los empleados
   try {
     const connection = await pool.getConnection();
 
     // Consulta para obtener los empleados con la información del usuario asociado
-    // Ahora incluimos la información de modificación
     const [rows] = await connection.query(`
       SELECT 
         e.id, 
@@ -137,7 +136,6 @@ app.get('/api/employees', async (req, res) => {
 app.get('/api/employees/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    // Validar que el ID sea un número
     const connection = await pool.getConnection();
     const [rows] = await connection.query(`
       SELECT 
@@ -158,20 +156,17 @@ app.get('/api/employees/:id', async (req, res) => {
       JOIN Users u ON e.id_user = u.id
       WHERE e.id = ?
     `, [id]);
-    // Liberar la conexión después de usarla
     connection.release();
-    // Verificar si se encontró el empleado
     if (rows.length === 0) {
       return res.status(404).json({ message: 'Empleado no encontrado' });
     }
-    // Obtener el primer empleado (asumiendo que el ID es único)
     res.json({
       ...rows[0],
       low_date: rows[0].low_date || null,
       last_modified: rows[0].last_modified ? new Date(rows[0].last_modified).toISOString() : null,
       modified_by: rows[0].modified_by || null
-    }); // Convertir fechas a formato adecuado y manejar valores nulos
-  } catch (error) { // Validar errores
+    });
+  } catch (error) {
     console.error('Error al obtener empleado:', error);
     res.status(500).json({ message: 'Error al obtener datos del empleado', error: error.message });
   }
@@ -179,7 +174,6 @@ app.get('/api/employees/:id', async (req, res) => {
 
 // Ruta para crear un nuevo usuario/administrador
 app.post('/api/users', async (req, res) => {
-  // Ruta para crear un nuevo usuario/administrador
   try {
     const { name, last_name, email, password, agency, is_superuser } = req.body;
 
@@ -230,7 +224,6 @@ app.get('/api/users', async (req, res) => {
       ORDER BY id ASC
     `);
 
-    // Liberar la conexión después de usarla
     connection.release();
 
     // No incluir las contraseñas en la respuesta por seguridad
@@ -262,7 +255,7 @@ app.get('/api/users/:id', async (req, res) => {
     // Agregamos una propiedad 'admin' manualmente
     const userWithAdmin = {
       ...users[0],
-      admin: false // o 'No' para mantener consistencia con el código existente
+      admin: false
     };
 
     res.json(userWithAdmin);
@@ -278,7 +271,6 @@ app.put('/api/users/:id', async (req, res) => {
     const { id } = req.params;
     const { name, last_name, email, password, agency, is_superuser } = req.body;
 
-    // Eliminamos admin del destructuring ya que no existe la columna
     const connection = await pool.getConnection();
 
     // Verificar si el usuario existe
@@ -372,13 +364,11 @@ app.post('/api/employees', async (req, res) => {
       return res.status(400).json({ message: 'Todos los campos requeridos deben ser proporcionados' });
     }
 
-    // Validar que el id_user sea un número
     const connection = await pool.getConnection();
 
     // Verificar si el id_user existe
     const [existingUsers] = await connection.query('SELECT id FROM Users WHERE id = ?', [id_user]);
 
-    // Verificar si el id_user existe
     if (existingUsers.length === 0) {
       connection.release();
       return res.status(404).json({ message: 'El usuario asociado no existe' });
@@ -444,7 +434,6 @@ app.put('/api/employees/:id', async (req, res) => {
     const formattedDate = currentTime.toISOString().slice(0, 19).replace('T', ' ');
 
     // Actualizar el empleado con manejo especial para la fecha de baja
-    // Ahora también guardamos la fecha de modificación y el usuario que modificó
     let query = `
       UPDATE Employees 
       SET name = ?, last_name = ?, agency = ?, 
@@ -469,12 +458,11 @@ app.put('/api/employees/:id', async (req, res) => {
     await connection.query(query, params);
 
     connection.release();
-    // Liberar la conexión después de usarla
     res.json({
       success: true,
       message: 'Empleado actualizado exitosamente'
     });
-  } catch (error) { // Validar errores
+  } catch (error) {
     console.error('Error al actualizar empleado:', error);
     res.status(500).json({ message: 'Error en el servidor', error: error.message });
   }
@@ -496,21 +484,18 @@ app.delete('/api/employees/:id', async (req, res) => {
 
     // Eliminar el empleado
     await connection.query('DELETE FROM Employees WHERE id = ?', [id]);
-    // Liberar la conexión después de usarla
     connection.release();
-    // Respuesta exitosa
     res.json({
       success: true,
       message: 'Empleado eliminado exitosamente'
     });
   } catch (error) {
-    // Manejo de errores
     console.error('Error al eliminar empleado:', error);
     res.status(500).json({ message: 'Error en el servidor', error: error.message });
   }
 });
 
 // Iniciar el servidor
-app.listen(PORT, () => {
-  console.log(`Servidor ejecutándose en http://localhost:${PORT}`);
+app.listen(port, "0.0.0.0", () => {
+  console.log(`Servidor RH Admin ejecutándose en: http://0.0.0.0:${port}`);
 });
