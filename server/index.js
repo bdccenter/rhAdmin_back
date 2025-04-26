@@ -337,7 +337,7 @@ app.delete('/api/users/:id', async (req, res) => {
     }
 
     // Verificar si hay empleados asociados a este usuario
-    const [employees] = await connection.query('SELECT id FROM Employees WHERE id_user = ?', [id]);
+    const [employees] = await connection.query('SELECT id FROM employees WHERE id_user = ?', [id]);
 
     if (employees.length > 0) {
       connection.release();
@@ -382,7 +382,7 @@ app.post('/api/employees', async (req, res) => {
 
     // Insertar el nuevo empleado
     const [result] = await connection.query(`
-      INSERT INTO Employees (name, last_name, agency, date_of_birth, high_date, status, photo, id_user) 
+      INSERT INTO employees (name, last_name, agency, date_of_birth, high_date, status, photo, id_user) 
       VALUES (?, ?, ?, STR_TO_DATE(?, '%Y-%m-%d'), STR_TO_DATE(?, '%Y-%m-%d'), ?, ?, ?)
     `, [name, last_name, agency, date_of_birth, high_date, status, photo, id_user]);
 
@@ -412,7 +412,7 @@ app.put('/api/employees/:id', async (req, res) => {
     const connection = await pool.getConnection();
 
     // Verificar si el empleado existe
-    const [existingEmployees] = await connection.query('SELECT id FROM Employees WHERE id = ?', [id]);
+    const [existingEmployees] = await connection.query('SELECT id FROM employees WHERE id = ?', [id]);
 
     if (existingEmployees.length === 0) {
       connection.release();
@@ -441,7 +441,7 @@ app.put('/api/employees/:id', async (req, res) => {
 
     // Actualizar el empleado con manejo especial para la fecha de baja
     let query = `
-      UPDATE Employees 
+      UPDATE employees 
       SET name = ?, last_name = ?, agency = ?, 
       date_of_birth = STR_TO_DATE(?, '%Y-%m-%d'), 
       high_date = STR_TO_DATE(?, '%Y-%m-%d'), 
@@ -481,7 +481,7 @@ app.delete('/api/employees/:id', async (req, res) => {
     const connection = await pool.getConnection();
 
     // Verificar si el empleado existe
-    const [existingEmployees] = await connection.query('SELECT id FROM Employees WHERE id = ?', [id]);
+    const [existingEmployees] = await connection.query('SELECT id FROM employees WHERE id = ?', [id]);
 
     if (existingEmployees.length === 0) {
       connection.release();
@@ -489,7 +489,7 @@ app.delete('/api/employees/:id', async (req, res) => {
     }
 
     // Eliminar el empleado
-    await connection.query('DELETE FROM Employees WHERE id = ?', [id]);
+    await connection.query('DELETE FROM employees WHERE id = ?', [id]);
     connection.release();
     res.json({
       success: true,
